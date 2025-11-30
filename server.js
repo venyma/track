@@ -1,25 +1,26 @@
 const express = require('express');
 const multer = require('multer');
 const crypto = require('crypto');
+const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Storage
+// storage
 let users = [];
 let videos = [];
 let sessions = {};
 
-// Middlewær
+// Middlefingerware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
-// Multah
+// Multer
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-// Helpaz
+// Helper functions
 function generateToken() {
   return crypto.randomBytes(16).toString('hex');
 }
@@ -31,7 +32,13 @@ function authMiddleware(req, res, next) {
   next();
 }
 
-// ROOOTS routes ROUTES Routes
+// --- ROutes ---
+
+// Serve html pages
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public/index.html')));
+app.get('/login', (req, res) => res.sendFile(path.join(__dirname, 'public/login.html')));
+app.get('/upload', (req, res) => res.sendFile(path.join(__dirname, 'public/upload.html')));
+app.get('/settings', (req, res) => res.sendFile(path.join(__dirname, 'public/settings.html')));
 
 // Sign up
 app.post('/signup', (req, res) => {
@@ -42,7 +49,7 @@ app.post('/signup', (req, res) => {
   res.json({ message: 'Account created' });
 });
 
-// log in
+// Log in
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
   const user = users.find(u => u.username === username && u.password === password);
@@ -52,7 +59,7 @@ app.post('/login', (req, res) => {
   res.json({ token, userId: user.id });
 });
 
-// Upload vids
+// Upload video
 app.post('/videos', authMiddleware, upload.single('video'), (req, res) => {
   const { title, description } = req.body;
   const file = req.file;
@@ -73,18 +80,19 @@ app.post('/videos', authMiddleware, upload.single('video'), (req, res) => {
   res.json({ message: 'Video uploaded', videoId: video.id });
 });
 
-// Get vids
+// Ge
 app.get('/videos', (req, res) => {
   const query = req.query.q || '';
   const result = videos.filter(v => v.title.includes(query) || v.description.includes(query));
   res.json(result);
 });
 
-// Account info
+// Acc
 app.get('/user', authMiddleware, (req, res) => {
   res.json(req.user);
 });
 
+// Updateinfo
 app.put('/user', authMiddleware, (req, res) => {
   const { username, password } = req.body;
   if (username) req.user.username = username;
@@ -92,4 +100,5 @@ app.put('/user', authMiddleware, (req, res) => {
   res.json(req.user);
 });
 
+// Start sever
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
